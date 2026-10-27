@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fokusin - Manajemen Tugas & Produktivitas Harian</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.05);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0,0,0,0.2);
+            border-radius: 3px;
+        }
+        .dark ::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.05);
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.2);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 min-h-screen transition-colors duration-200">
+    <div class="max-w-4xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
+        
+        <!-- Header & Theme Toggle -->
+        <header class="flex justify-between items-center pb-4 sm:pb-6 border-b border-slate-200 dark:border-slate-800 mb-6 sm:mb-8">
+            <div class="flex items-center space-x-2.5 sm:space-x-3">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-lg sm:text-xl shadow-lg shadow-blue-500/30 shrink-0">
+                    <i class="fa-solid fa-check-double"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-bold tracking-tight leading-tight">Fokusin</h1>
+                    <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400">Kelola tugas harianmu dengan efisien</p>
+                </div>
+            </div>
+            
+            <button id="themeToggle" class="p-2 sm:p-2.5 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 transition" aria-label="Toggle Theme">
+                <i class="fa-solid fa-moon dark:hidden text-sm sm:text-base"></i>
+                <i class="fa-solid fa-sun hidden dark:inline text-sm sm:text-base"></i>
+            </button>
+        </header>
+
+        <!-- Dynamic Statistics -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4 mb-6 sm:mb-8">
+            <div class="bg-white dark:bg-slate-800 p-3 sm:p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700/50">
+                <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium truncate">Total Tugas</p>
+                <h3 id="statTotal" class="text-xl sm:text-2xl font-bold mt-0.5 sm:mt-1 text-slate-700 dark:text-slate-200">0</h3>
+            </div>
+            <div class="bg-white dark:bg-slate-800 p-3 sm:p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700/50">
+                <p class="text-[11px] sm:text-xs text-amber-500 font-medium truncate">Aktif / Belum</p>
+                <h3 id="statPending" class="text-xl sm:text-2xl font-bold mt-0.5 sm:mt-1 text-amber-600 dark:text-amber-400">0</h3>
+            </div>
+            <div class="bg-white dark:bg-slate-800 p-3 sm:p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700/50">
+                <p class="text-[11px] sm:text-xs text-emerald-500 font-medium truncate">Selesai</p>
+                <h3 id="statCompleted" class="text-xl sm:text-2xl font-bold mt-0.5 sm:mt-1 text-emerald-600 dark:text-emerald-400">0</h3>
+            </div>
+            <div class="bg-white dark:bg-slate-800 p-3 sm:p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700/50">
+                <p class="text-[11px] sm:text-xs text-blue-500 font-medium truncate">Progres</p>
+                <h3 id="statProgress" class="text-xl sm:text-2xl font-bold mt-0.5 sm:mt-1 text-blue-600 dark:text-blue-400">0%</h3>
+            </div>
+        </div>
+
+        <!-- Form Input Task -->
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-100 dark:border-slate-700/50 mb-6 sm:mb-8">
+            <h2 class="text-xs sm:text-sm font-semibold uppercase tracking-wider text-slate-400 mb-3 sm:mb-4" id="formTitle">Tambah Tugas Baru</h2>
+            <form id="taskForm" class="space-y-3 sm:space-y-4">
+                <input type="hidden" id="editTaskId">
+                
+                <div class="flex flex-col md:flex-row gap-2.5 sm:gap-3">
+                    <input type="text" id="taskTitle" placeholder="Apa yang perlu diselesaikan?" required
+                        class="w-full flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 sm:py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white transition">
+                    
+                    <div class="grid grid-cols-2 gap-2 w-full md:w-auto">
+                        <select id="taskCategory" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 sm:py-3 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-slate-300">
+                            <option value="Umum">Umum</option>
+                            <option value="Pekerjaan">Pekerjaan</option>
+                            <option value="Pribadi">Pribadi</option>
+                            <option value="Belajar">Belajar</option>
+                        </select>
+                        
+                        <select id="taskPriority" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 sm:py-3 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-slate-300">
+                            <option value="rendah">Rendah</option>
+                            <option value="sedang" selected>Sedang</option>
+                            <option value="tinggi">Tinggi</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex flex-row justify-end gap-2 pt-1">
+                    <button type="button" id="cancelEditBtn" class="hidden flex-1 sm:flex-none px-4 sm:px-5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs sm:text-sm font-medium transition">
+                        Batal
+                    </button>
+                    <button type="submit" id="submitTaskBtn" class="flex-1 sm:flex-none w-full sm:w-auto px-5 sm:px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs sm:text-sm shadow-lg shadow-blue-500/20 transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-plus text-xs sm:text-sm"></i> <span id="submitBtnText">Tambah Tugas</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Toolbar: Search & Filters -->
+        <div class="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+            <!-- Filter Tabs -->
+            <div class="flex bg-slate-200/60 dark:bg-slate-800 p-1 rounded-xl text-xs font-medium w-full sm:w-auto">
+                <button class="filter-btn flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg transition text-center active-filter" data-filter="all">Semua</button>
+                <button class="filter-btn flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg transition text-center" data-filter="pending">Aktif</button>
+                <button class="filter-btn flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg transition text-center" data-filter="completed">Selesai</button>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="relative w-full sm:w-64 md:w-72">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs sm:text-sm"></i>
+                <input type="text" id="searchInput" placeholder="Cari tugas..." 
+                    class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/70 rounded-xl pl-9 pr-4 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-slate-200">
+            </div>
+        </div>
+
+        <!-- Task List Container -->
+        <div id="taskList" class="space-y-2.5 sm:space-y-3">
+            <!-- Tasks will be rendered here dynamically -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden text-center py-8 sm:py-12 bg-white dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 px-4">
+            <div class="w-12 h-12 sm:w-16 sm:h-16 bg-blue-50 dark:bg-slate-800 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-3 text-lg sm:text-xl">
+                <i class="fa-solid fa-clipboard-list"></i>
+            </div>
+            <h3 class="text-sm sm:text-base text-slate-700 dark:text-slate-300 font-medium">Tidak Ada Tugas</h3>
+            <p class="text-[11px] sm:text-xs text-slate-400 mt-1">Belum ada tugas yang tersedia atau sesuai dengan filter kamu.</p>
+        </div>
+
+        <!-- Action Footer -->
+        <div id="footerActions" class="mt-6 sm:mt-8 flex flex-row justify-between items-center text-[11px] sm:text-xs text-slate-400 border-t border-slate-200 dark:border-slate-800 pt-3 sm:pt-4">
+            <span id="itemsLeftCount">0 tugas tersisa</span>
+            <button id="clearCompletedBtn" class="hover:text-red-500 transition font-medium">Hapus Selesai</button>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-4 right-4 left-4 sm:left-auto sm:max-w-xs bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-4 py-3 rounded-xl shadow-xl transform translate-y-24 opacity-0 transition-all duration-300 text-xs sm:text-sm flex items-center justify-between sm:justify-start gap-2 z-50 pointer-events-none">
+        <div class="flex items-center gap-2 truncate">
+            <i id="toastIcon" class="fa-solid fa-circle-info text-blue-400 shrink-0"></i>
+            <span id="toastMessage" class="truncate">Notifikasi</span>
+        </div>
+    </div>
+
+    <!-- Main Application JavaScript Logic -->
+    <script>
+        // Data State Management
+        let tasks = JSON.parse(localStorage.getItem('fokusin_tasks')) || [
+            { id: '1', title: 'Belajar dasar CRUD di JavaScript', category: 'Belajar', priority: 'tinggi', completed: true, createdAt: new Date().toISOString() },
+            { id: '2', title: 'Membuat tampilan web responsive', category: 'Pekerjaan', priority: 'sedang', completed: false, createdAt: new Date().toISOString() },
+        ];
+
+        let currentFilter = 'all';
+        let searchQuery = '';
+
+        // DOM Elements
+        const taskForm = document.getElementById('taskForm');
+        const taskTitleInput = document.getElementById('taskTitle');
+        const taskCategoryInput = document.getElementById('taskCategory');
+        const taskPriorityInput = document.getElementById('taskPriority');
+        const editTaskIdInput = document.getElementById('editTaskId');
+        const submitTaskBtn = document.getElementById('submitTaskBtn');
+        const submitBtnText = document.getElementById('submitBtnText');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+        const formTitle = document.getElementById('formTitle');
+        const taskList = document.getElementById('taskList');
+        const emptyState = document.getElementById('emptyState');
+        const searchInput = document.getElementById('searchInput');
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        const themeToggle = document.getElementById('themeToggle');
+        const clearCompletedBtn = document.getElementById('clearCompletedBtn');
+
+        // Stats Elements
+        const statTotal = document.getElementById('statTotal');
+        const statPending = document.getElementById('statPending');
+        const statCompleted = document.getElementById('statCompleted');
+        const statProgress = document.getElementById('statProgress');
+        const itemsLeftCount = document.getElementById('itemsLeftCount');
+
+        // Initial Initialization
+        window.onload = function() {
+            initTheme();
+            renderTasks();
+            setupEventListeners();
+        };
+
+        // Theme Initialization & Handler
+        function initTheme() {
+            if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+
+        themeToggle.addEventListener('click', () => {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('color-theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('color-theme', 'dark');
+            }
+        });
+
+        // Setup Event Listeners
+        function setupEventListeners() {
+            // Form Submit (Create / Update)
+            taskForm.addEventListener('submit', handleTaskSubmit);
+            cancelEditBtn.addEventListener('click', resetForm);
+
+            // Filter Tabs
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    filterBtns.forEach(b => {
+                        b.classList.remove('bg-white', 'dark:bg-slate-700', 'shadow-sm', 'text-blue-600', 'dark:text-white', 'active-filter');
+                        b.classList.add('text-slate-500', 'hover:text-slate-700');
+                    });
+                    
+                    const target = e.currentTarget;
+                    target.classList.add('bg-white', 'dark:bg-slate-700', 'shadow-sm', 'text-blue-600', 'dark:text-white', 'active-filter');
+                    target.classList.remove('text-slate-500', 'hover:text-slate-700');
+
+                    currentFilter = target.getAttribute('data-filter');
+                    renderTasks();
+                });
+            });
+
+            // Set initial active filter button style
+            document.querySelector('.filter-btn[data-filter="all"]').classList.add('bg-white', 'dark:bg-slate-700', 'shadow-sm', 'text-blue-600', 'dark:text-white');
+
+            // Search Filter Input
+            searchInput.addEventListener('input', (e) => {
+                searchQuery = e.target.value.toLowerCase();
+                renderTasks();
+            });
+
+            // Clear Completed Tasks
+            clearCompletedBtn.addEventListener('click', () => {
+                const completedCount = tasks.filter(t => t.completed).length;
+                if (completedCount === 0) {
+                    showToast('Tidak ada tugas selesai untuk dihapus', 'info');
+                    return;
+                }
+                tasks = tasks.filter(t => !t.completed);
+                saveTasks();
+                renderTasks();
+                showToast(`Berhasil menghapus ${completedCount} tugas selesai`, 'success');
+            });
+        }
+
+        // Save Tasks to LocalStorage
+        function saveTasks() {
+            localStorage.setItem('fokusin_tasks', JSON.stringify(tasks));
+        }
+
+        // Handle Add or Edit Task (CRUD: Create & Update)
+        function handleTaskSubmit(e) {
+            e.preventDefault();
+            
+            const title = taskTitleInput.value.trim();
+            const category = taskCategoryInput.value;
+            const priority = taskPriorityInput.value;
+            const editId = editTaskIdInput.value;
+
+            if (!title) return;
+
+            if (editId) {
+                // Update Existing Task
+                tasks = tasks.map(t => t.id === editId ? { ...t, title, category, priority } : t);
+                showToast('Tugas berhasil diperbarui!', 'success');
+            } else {
+                // Create New Task
+                const newTask = {
+                    id: Date.now().toString(),
+                    title,
+                    category,
+                    priority,
+                    completed: false,
+                    createdAt: new Date().toISOString()
+                };
+                tasks.unshift(newTask);
+                showToast('Tugas baru ditambahkan!', 'success');
+            }
+
+            saveTasks();
+            resetForm();
+            renderTasks();
+        }
+
+        // Reset Form Controls
+        function resetForm() {
+            taskTitleInput.value = '';
+            taskCategoryInput.value = 'Umum';
+            taskPriorityInput.value = 'sedang';
+            editTaskIdInput.value = '';
+            
+            formTitle.textContent = 'Tambah Tugas Baru';
+            submitBtnText.textContent = 'Tambah Tugas';
+            cancelEditBtn.classList.add('hidden');
+        }
+
+        // Toggle Task Completion Status (CRUD: Update Status)
+        function toggleTaskStatus(id) {
+            tasks = tasks.map(t => {
+                if (t.id === id) {
+                    const status = !t.completed;
+                    showToast(status ? 'Tugas diselesaikan! 🎉' : 'Tugas dikembalikan ke aktif', 'info');
+                    return { ...t, completed: status };
+                }
+                return t;
+            });
+            saveTasks();
+            renderTasks();
+        }
+
+        // Prepare Task for Edit (CRUD: Read for Update)
+        function prepareEditTask(id) {
+            const task = tasks.find(t => t.id === id);
+            if (!task) return;
+
+            editTaskIdInput.value = task.id;
+            taskTitleInput.value = task.title;
+            taskCategoryInput.value = task.category;
+            taskPriorityInput.value = task.priority;
+
+            formTitle.textContent = 'Edit Tugas';
+            submitBtnText.textContent = 'Simpan Perubahan';
+            cancelEditBtn.classList.remove('hidden');
+
+            taskTitleInput.focus();
+        }
+
+        // Delete Task (CRUD: Delete)
+        function deleteTask(id) {
+            tasks = tasks.filter(t => t.id !== id);
+            saveTasks();
+            renderTasks();
+            showToast('Tugas berhasil dihapus', 'danger');
+        }
+
+        // Render Tasks to UI
+        function renderTasks() {
+            // Filter logic
+            let filteredTasks = tasks.filter(task => {
+                const matchesFilter = 
+                    currentFilter === 'all' ? true :
+                    currentFilter === 'completed' ? task.completed :
+                    !task.completed;
+
+                const matchesSearch = task.title.toLowerCase().includes(searchQuery);
+
+                return matchesFilter && matchesSearch;
+            });
+
+            // Update Statistics & UI Counters
+            updateStatistics();
+
+            // Clear Render Container
+            taskList.innerHTML = '';
+
+            if (filteredTasks.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+
+                filteredTasks.forEach(task => {
+                    const priorityBadges = {
+                        rendah: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300',
+                        sedang: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+                        tinggi: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'
+                    };
+
+                    const card = document.createElement('div');
+                    card.className = `group bg-white dark:bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-100 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-all flex items-center justify-between gap-2.5 sm:gap-4 ${task.completed ? 'opacity-75' : ''}`;
+                    
+                    card.innerHTML = `
+                        <div class="flex items-center gap-2.5 sm:gap-3.5 flex-1 min-w-0">
+                            <button onclick="toggleTaskStatus('${task.id}')" class="w-5 h-5 sm:w-6 sm:h-6 rounded-lg border-2 flex items-center justify-center transition shrink-0 ${task.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 dark:border-slate-600 hover:border-blue-500'}" aria-label="Toggle Complete Status">
+                                ${task.completed ? '<i class="fa-solid fa-check text-[10px] sm:text-xs"></i>' : ''}
+                            </button>
+                            
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs sm:text-sm font-medium ${task.completed ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-slate-200'} truncate">
+                                    ${escapeHtml(task.title)}
+                                </p>
+                                <div class="flex items-center gap-1.5 sm:gap-2 mt-0.5 sm:mt-1 flex-wrap">
+                                    <span class="text-[9px] sm:text-[10px] font-semibold px-1.5 sm:px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300">
+                                        ${escapeHtml(task.category)}
+                                    </span>
+                                    <span class="text-[9px] sm:text-[10px] uppercase font-bold tracking-wider px-1.5 sm:px-2 py-0.5 rounded-md ${priorityBadges[task.priority]}">
+                                        ${task.priority}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex items-center gap-0.5 sm:gap-1 shrink-0">
+                            <button onclick="prepareEditTask('${task.id}')" class="p-1.5 sm:p-2 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition" title="Edit Tugas" aria-label="Edit Tugas">
+                                <i class="fa-solid fa-pen-to-square text-xs sm:text-sm"></i>
+                            </button>
+                            <button onclick="deleteTask('${task.id}')" class="p-1.5 sm:p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition" title="Hapus Tugas" aria-label="Hapus Tugas">
+                                <i class="fa-solid fa-trash-can text-xs sm:text-sm"></i>
+                            </button>
+                        </div>
+                    `;
+
+                    taskList.appendChild(card);
+                });
+            }
+        }
+
+        // Calculate and Render Live Statistics
+        function updateStatistics() {
+            const total = tasks.length;
+            const completed = tasks.filter(t => t.completed).length;
+            const pending = total - completed;
+            const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+            statTotal.textContent = total;
+            statPending.textContent = pending;
+            statCompleted.textContent = completed;
+            statProgress.textContent = `${percentage}%`;
+
+            itemsLeftCount.textContent = `${pending} tugas tersisa`;
+        }
+
+        // Show Notification Toast
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMessage.textContent = message;
+
+            // Icon & Color Configuration
+            if (type === 'success') {
+                toastIcon.className = 'fa-solid fa-circle-check text-emerald-400';
+            } else if (type === 'danger') {
+                toastIcon.className = 'fa-solid fa-circle-xmark text-rose-400';
+            } else {
+                toastIcon.className = 'fa-solid fa-circle-info text-blue-400';
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 2500);
+        }
+
+        // Helper: Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
+```
